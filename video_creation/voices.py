@@ -34,7 +34,14 @@ def save_text_to_mp3(reddit_obj) -> Tuple[int, int]:
         tuple[int,int]: (total length of the audio, the number of comments audio was generated for)
     """
 
-    voice = settings.config["settings"]["tts"]["voice_choice"]
+    tts_cfg = settings.config["settings"]["tts"]
+
+    # If use_gtts is enabled, always use GoogleTranslate provider (gTTS),
+    # regardless of what voice_choice is set to.
+    if tts_cfg.get("use_gtts"):
+        voice = "GoogleTranslate"
+    else:
+        voice = tts_cfg["voice_choice"]
     if str(voice).casefold() in map(lambda _: _.casefold(), TTSProviders):
         text_to_mp3 = TTSEngine(get_case_insensitive_key_value(TTSProviders, voice), reddit_obj)
     else:

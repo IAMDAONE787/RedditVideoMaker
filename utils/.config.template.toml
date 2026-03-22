@@ -7,6 +7,7 @@ password = { optional = false, nmin = 8, explanation = "The password of your red
 
 
 [reddit.thread]
+use_api = { optional = true, type = "bool", default = true, options = [true, false], explanation = "If false, fetch Reddit posts via the public .json endpoint instead of the Reddit API. No client_id, client_secret, username, or password needed.", example = false }
 random = { optional = true, options = [true, false, ], default = false, type = "bool", explanation = "If set to no, it will ask you a thread link to extract the thread, if yes it will randomize it. Default: 'False'", example = "True" }
 subreddit = { optional = false, regex = "[_0-9a-zA-Z\\+]+$", nmin = 3, explanation = "What subreddit to pull posts from, the name of the sub, not the URL. You can have multiple subreddits, add an + with no spaces.", example = "AskReddit+Redditdev", oob_error = "A subreddit name HAS to be between 3 and 20 characters" }
 post_id = { optional = true, default = "", regex = "^((?!://|://)[+a-zA-Z0-9])*$", explanation = "Used if you want to use a specific post.", example = "urdtfx" }
@@ -33,6 +34,15 @@ resolution_h = { optional = false, default = 1920, example = 2560, explantation 
 zoom = { optional = true, default = 1, example = 1.1, explanation = "Sets the browser zoom level. Useful if you want the text larger.", type = "float", nmin = 0.1, nmax = 2, oob_error = "The text is really difficult to read at a zoom level higher than 2" }
 channel_name = { optional = true, default = "Reddit Tales", example = "Reddit Stories", explanation = "Sets the channel name for the video" }
 show_Reddit_Title = { optional = true, option = [true, false], default = "true", type = "bool", explanation = "Show Reddit post at start of video?" }
+show_real_stats = { optional = true, type = "bool", default = false, options = [true, false], explanation = "If true, display the real upvote and comment counts on the Reddit card instead of the placeholder 999+." }
+offline_mode = { optional = true, type = "bool", default = false, example = true, explanation = "If true, do not upload to TikTok/Instagram/YouTube; just save videos locally." }
+offline_output_dir = { optional = true, default = "offline_results", example = "offline_results", explanation = "Relative folder under the project root where finished videos are copied when offline_mode is true." }
+
+[manual]
+enabled = { optional = true, type = "bool", default = false, example = false, explanation = "If true, bypasses the Reddit API and uses the manual title/body text below instead." }
+title = { optional = true, default = "My custom story title", example = "My custom story title", explanation = "Title text to use when manual mode is enabled." }
+body = { optional = true, default = "My custom story text goes here.", example = "My custom story text goes here.", explanation = "Main story text to use when manual mode is enabled." }
+comments = { optional = true, explanation = "Optional list of extra comment texts to be spoken and shown after the main body when manual mode is enabled.", example = ["First additional comment text", "Second additional comment text"] }
 
 [settings.background]
 background_video = { optional = true, default = "minecraft", example = "rocket-league", options = ["minecraft", "gta", "rocket-league", "motor-gta", "csgo-surf", "cluster-truck", "minecraft-2","multiversus","fall-guys","steep", ""], explanation = "Sets the background for the video based on game name" }
@@ -57,3 +67,4 @@ python_voice = { optional = false, default = "1", example = "1", explanation = "
 py_voice_num = { optional = false, default = "2", example = "2", explanation = "The number of system voices (2 are pre-installed in Windows)" }
 silence_duration = { optional = true, example = "0.1", explanation = "Time in seconds between TTS comments", default = 0.3, type = "float" }
 no_emojis = { optional = false, type = "bool", default = false, example = false, options = [true, false,], explanation = "Whether to remove emojis from the comments" }
+use_gtts = { optional = true, type = "bool", default = false, example = true, explanation = "If true, force GoogleTranslate (gTTS) for TTS regardless of voice_choice, and do not require TikTok or ElevenLabs credentials." }

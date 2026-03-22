@@ -3,6 +3,18 @@
 # Log file path
 LOG_FILE=~/RedditVideoMakerBot-master/logs/script_log.txt
 
+# Project root and config for reading flags
+PROJECT_ROOT=~/RedditVideoMakerBot-master
+CONFIG_FILE="$PROJECT_ROOT/config.toml"
+
+# Read offline_mode and offline_output_dir from config.toml (best-effort, optional)
+OFFLINE_MODE=$(grep -E '^[[:space:]]*offline_mode[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/.*=\s*//')
+OFFLINE_OUTPUT_DIR=$(grep -E '^[[:space:]]*offline_output_dir[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/.*=\s*"?(.*?)"?$/\1/')
+
+if [[ -z "$OFFLINE_OUTPUT_DIR" ]]; then
+  OFFLINE_OUTPUT_DIR="offline_results"
+fi
+
 # Function to log both to stdout and to a file
 log() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
@@ -56,6 +68,17 @@ python3 ~/RedditVideoMakerBot-master/captionGen.py "$latest_file"  --font ~/Redd
 # Update the file path to add the "_out" at the end
 latest_file="${latest_file%.mp4}_out.mp4"
 log "Updated file name for the captioned version: $latest_file"
+
+# If offline_mode is enabled, just copy the finished file and skip all uploads.
+if [[ "$OFFLINE_MODE" == "true" || "$OFFLINE_MODE" == "True" ]]; then
+  dest_dir="$PROJECT_ROOT/$OFFLINE_OUTPUT_DIR"
+  mkdir -p "$dest_dir"
+  cp "$latest_file" "$dest_dir/"
+  log "offline_mode is enabled; saved $latest_file to $dest_dir and skipping all uploads."
+  deactivate
+  log "Script completed (offline mode)."
+  exit 0
+fi
 
 # Upload to YouTube
 log "Uploading $latest_file to YouTube."

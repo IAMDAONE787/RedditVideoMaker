@@ -276,6 +276,10 @@ def make_final_video(
     # create_fancy_thumbnail(image, text, text_color, padding
     title_img = create_fancy_thumbnail(title_template, title, font_color, padding)
 
+    if settings.config["settings"].get("show_real_stats") and "thread_upvotes" in reddit_obj:
+        from utils.card_stats import stamp_stats
+        stamp_stats(title_img, reddit_obj["thread_upvotes"], reddit_obj["thread_comments"])
+
     title_img.save(f"assets/temp/{reddit_id}/png/title.png")
 
     if settings.config["settings"]["show_Reddit_Title"]:
@@ -317,13 +321,19 @@ def make_final_video(
             )
             current_time += audio_clips_durations[0]
         elif settings.config["settings"]["storymodemethod"] == 1:
+            manual_enabled = settings.config.get("manual", {}).get("enabled")
+            use_api = settings.config["reddit"]["thread"].get("use_api", True)
+            use_generated_images = manual_enabled or not use_api
             for i in track(range(0, number_of_clips + 1), "Collecting the image files..."):
-                 # Create a transparent image for other clips
-                transparent_image = Image.new('RGBA', (screenshot_width, screenshot_width), (0, 0, 0, 0))
-                transparent_image.save(f"assets/temp/{reddit_id}/png/trs{i}.png")
+                if use_generated_images:
+                    img_path = f"assets/temp/{reddit_id}/png/img{i}.png"
+                else:
+                    transparent_image = Image.new('RGBA', (screenshot_width, screenshot_width), (0, 0, 0, 0))
+                    img_path = f"assets/temp/{reddit_id}/png/trs{i}.png"
+                    transparent_image.save(img_path)
 
                 image_clips.append(
-                    ffmpeg.input(f"assets/temp/{reddit_id}/png/trs{i}.png")["v"].filter(
+                    ffmpeg.input(img_path)["v"].filter(
                         "scale", screenshot_width, -1
                     )
                 )
@@ -403,16 +413,19 @@ def make_final_video(
             thumbnailSave.save(f"./assets/temp/{reddit_id}/thumbnail.png")
             print_substep(f"Thumbnail - Building Thumbnail in assets/temp/{reddit_id}/thumbnail.png")
 
-    text = f" " #Removed mmention of bacground creator
-    background_clip = ffmpeg.drawtext(
-        background_clip,
-        text=text,
-        x=f"(w-text_w)",
-        y=f"(h-text_h)",
-        fontsize=5,
-        fontcolor="White",
-        fontfile=os.path.join("fonts", "Roboto-Regular.ttf"),
-    )
+    # Optional watermark using ffmpeg drawtext (disabled by default to avoid requiring the drawtext filter).
+    # text = f" "  # Removed mention of background creator
+    # background_clip = ffmpeg.drawtext(
+    #     background_clip,
+    #     text=text,
+    #     x="(w-text_w)",
+    #     y="(h-text_h)",
+    #     fontsize=5,
+    #     fontcolor="White",
+    #     fontfile=os.path.join("fonts", "Roboto-Regular.ttf"),
+    # )
+
+    # Scale background to final resolution.
     background_clip = background_clip.filter("scale", W, H)
     print_step("Rendering the video 🎥")
     from tqdm import tqdm

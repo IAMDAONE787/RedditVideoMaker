@@ -19,8 +19,12 @@ def check_done(
     Returns:
         Submission|None: Reddit object in args
     """
-    with open("./video_creation/data/videos.json", "r", encoding="utf-8") as done_vids_raw:
-        done_videos = json.load(done_vids_raw)
+    try:
+        with open("./video_creation/data/videos.json", "r", encoding="utf-8") as done_vids_raw:
+            done_videos = json.load(done_vids_raw)
+    except FileNotFoundError:
+        # If the tracking file doesn't exist yet, treat as no videos done.
+        done_videos = []
     for video in done_videos:
         if video["id"] == str(redditobj):
             if settings.config["reddit"]["thread"]["post_id"]:
@@ -43,8 +47,14 @@ def save_data(subreddit: str, filename: str, reddit_title: str, reddit_id: str, 
         @param reddit_id:
         @param reddit_title:
     """
-    with open("./video_creation/data/videos.json", "r+", encoding="utf-8") as raw_vids:
-        done_vids = json.load(raw_vids)
+    path = "./video_creation/data/videos.json"
+    try:
+        with open(path, "r+", encoding="utf-8") as raw_vids:
+            done_vids = json.load(raw_vids)
+    except FileNotFoundError:
+        # Initialise tracking file with empty list if it doesn't exist yet.
+        done_vids = []
+        raw_vids = open(path, "w+", encoding="utf-8")
         if reddit_id in [video["id"] for video in done_vids]:
             return  # video already done but was specified to continue anyway in the config file
         payload = {

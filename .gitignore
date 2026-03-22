@@ -246,3 +246,17 @@ video_creation/data/envvars.txt
 
 config.toml
 *.exe
+
+# Large media files
+*.mp4
+*.mp3
+*.m4a
+*.webm
+*.avi
+*.mov
+*.mkv
+*.wav
+*.ogg
+*.flac
+# Keep the small TTS voice samples that ship with the GUI
+!GUI/voices/*.mp3

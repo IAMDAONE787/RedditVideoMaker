@@ -8,6 +8,7 @@ from typing import NoReturn
 
 from prawcore import ResponseException
 
+from reddit.headless import get_subreddit_threads_headless
 from reddit.subreddit import get_subreddit_threads
 from utils import settings
 from utils.cleanup import cleanup
@@ -45,7 +46,58 @@ checkversion(__VERSION__)
 
 def main(POST_ID=None) -> None:
     global redditid, reddit_object
-    reddit_object = get_subreddit_threads(POST_ID)
+    # Optional manual mode: when enabled in config, bypass Reddit API
+    manual_cfg = settings.config.get("manual", {})
+    if manual_cfg.get("enabled"):
+        from utils.posttextparser import posttextparser
+
+        # Force storymode with imagemaker so we don't need Reddit login/screenshots.
+        settings.config["settings"]["storymode"] = True
+        settings.config["settings"]["storymodemethod"] = 1
+
+        manual_title = manual_cfg.get("title") or "Manual story"
+        manual_body = manual_cfg.get("body") or ""
+        manual_comments = manual_cfg.get("comments") or []
+        # Ensure comments is a flat list of non-empty strings
+        manual_comments = [str(c).strip() for c in manual_comments if str(c).strip()]
+
+        # Build a minimal reddit-like object so the rest of the pipeline can run unchanged.
+        reddit_object = {
+            "thread_url": "https://www.reddit.com/",
+            "thread_title": manual_title,
+            # Use a fixed, safe thread_id for manual runs; it only affects temp/result paths.
+            "thread_id": "manual-thread",
+            "is_nsfw": False,
+        }
+
+        if settings.config["settings"]["storymode"]:
+            # Use storymode text pipeline (single long story).
+            if settings.config["settings"]["storymodemethod"] == 1:
+                base_segments = posttextparser(manual_body)
+                # Append any extra manual comments as additional segments
+                reddit_object["thread_post"] = base_segments + manual_comments
+            else:
+                # Single long story; append comments at the end.
+                combined = manual_body + ("\n\n" + "\n\n".join(manual_comments) if manual_comments else "")
+                reddit_object["thread_post"] = combined
+            reddit_object["comments"] = []
+        else:
+            # Non-storymode: treat the body as a single "comment".
+            reddit_object["comments"] = [
+                {
+                    "comment_body": manual_body or manual_title,
+                    "comment_url": "",
+                    "comment_id": "manual-comment",
+                }
+            ]
+    elif not settings.config["reddit"]["thread"].get("use_api", True):
+        # Without API credentials we can't log into Reddit for browser screenshots,
+        # so force storymode + imagemaker which generates images from scraped text.
+        settings.config["settings"]["storymode"] = True
+        settings.config["settings"]["storymodemethod"] = 1
+        reddit_object = get_subreddit_threads_headless(POST_ID)
+    else:
+        reddit_object = get_subreddit_threads(POST_ID)
     redditid = id(reddit_object)
     length, number_of_comments = save_text_to_mp3(reddit_object)
     length = math.ceil(length)
@@ -91,12 +143,14 @@ if __name__ == "__main__":
     )
     config is False and sys.exit()
 
+    tts_cfg = settings.config["settings"]["tts"]
     if (
-        not settings.config["settings"]["tts"]["tiktok_sessionid"]
-        or settings.config["settings"]["tts"]["tiktok_sessionid"] == ""
-    ) and config["settings"]["tts"]["voice_choice"] == "tiktok":
+        not tts_cfg.get("use_gtts")  # gTTS mode does not need a TikTok session
+        and (not tts_cfg["tiktok_sessionid"] or tts_cfg["tiktok_sessionid"] == "")
+        and config["settings"]["tts"]["voice_choice"] == "tiktok"
+    ):
         print_substep(
-            "TikTok voice requires a sessionid! Check our documentation on how to obtain one.",
+            "TikTok voice requires a sessionid! Check our documentation on how to obtain one, or enable gTTS (GoogleTranslate) in settings.tts.use_gtts.",
             "bold red",
         )
         sys.exit()

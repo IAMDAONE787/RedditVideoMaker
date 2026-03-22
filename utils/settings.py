@@ -9,6 +9,7 @@ from utils.console import handle_input
 
 console = Console()
 config = dict  # autocomplete
+_manual_enabled = False
 
 
 def crawl(obj: dict, func=lambda x, y: print(x, y, end="\n"), path=None):
@@ -102,13 +103,32 @@ def crawl_and_check(obj: dict, path: list, checks: dict = {}, name=""):
     return obj
 
 
+def _apiless_enabled() -> bool:
+    """Return True when the user has opted out of the Reddit API."""
+    try:
+        return not bool(config.get("reddit", {}).get("thread", {}).get("use_api", True))
+    except Exception:
+        return False
+
+
 def check_vars(path, checks):
-    global config
+    global config, _manual_enabled
+    # When manual mode is enabled, skip validation of Reddit API credentials.
+    if _manual_enabled and len(path) >= 2 and path[0] == "reddit" and path[1] == "creds":
+        return
+    # When use_api is false, skip all reddit.creds fields (no API credentials needed).
+    if (
+        _apiless_enabled()
+        and len(path) >= 2
+        and path[0] == "reddit"
+        and path[1] == "creds"
+    ):
+        return
     crawl_and_check(config, path, checks)
 
 
 def check_toml(template_file, config_file) -> Tuple[bool, Dict]:
-    global config
+    global config, _manual_enabled
     config = None
     try:
         template = toml.load(template_file)
@@ -148,6 +168,12 @@ Creating it now."""
                 f"[red bold]Failed to write to {config_file}. Giving up.\nSuggestion: check the folder's permissions for the user."
             )
             return False
+
+    # Detect whether manual mode is enabled in the current config.
+    try:
+        _manual_enabled = bool(config.get("manual", {}).get("enabled", False))
+    except Exception:
+        _manual_enabled = False
 
     console.print(
         """\
