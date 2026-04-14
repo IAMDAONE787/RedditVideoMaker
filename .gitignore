@@ -260,3 +260,13 @@ config.toml
 *.flac
 # Keep the small TTS voice samples that ship with the GUI
 !GUI/voices/*.mp3
+
+# Cursor IDE
+.cursor/
+
+# Uploader credentials and tokens
+uploaders/instagram_creds.conf
+uploaders/youtube_client_secret.json
+uploaders/YTtoken.json
+uploaders/session.json
+uploaders/TiktokAutoUploader/CookiesDir/

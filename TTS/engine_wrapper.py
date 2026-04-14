@@ -186,10 +186,7 @@ class TTSEngine:
             filepath=f"{self.path}/{filename}.mp3",
             random_voice=settings.config["settings"]["tts"]["random_voice"],
         )
-        # try:
-        #     self.length += MP3(f"{self.path}/{filename}.mp3").info.length
-        # except (MutagenError, HeaderNotFoundError):
-        #     self.length += sox.file_info.duration(f"{self.path}/{filename}.mp3")
+        self._apply_speed(f"{self.path}/{filename}.mp3")
         try:
             clip = AudioFileClip(f"{self.path}/{filename}.mp3")
             self.last_clip_length = clip.duration
@@ -197,6 +194,16 @@ class TTSEngine:
             clip.close()
         except:
             self.length = 0
+
+    def _apply_speed(self, filepath: str):
+        speed = settings.config["settings"]["tts"].get("tts_speed", 1.0)
+        if speed == 1.0:
+            return
+        tmp = filepath + ".tmp.mp3"
+        os.system(
+            f'ffmpeg -y -hide_banner -loglevel panic -i "{filepath}" '
+            f'-filter:a "atempo={speed}" "{tmp}" && mv "{tmp}" "{filepath}"'
+        )
 
     def create_silence_mp3(self):
         silence_duration = settings.config["settings"]["tts"]["silence_duration"]

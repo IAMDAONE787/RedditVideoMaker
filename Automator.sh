@@ -10,6 +10,10 @@ CONFIG_FILE="$PROJECT_ROOT/config.toml"
 # Read offline_mode and offline_output_dir from config.toml (best-effort, optional)
 OFFLINE_MODE=$(grep -E '^[[:space:]]*offline_mode[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/.*=\s*//')
 OFFLINE_OUTPUT_DIR=$(grep -E '^[[:space:]]*offline_output_dir[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/.*=\s*"?(.*?)"?$/\1/')
+INSTAGRAM_CAPTION=$(grep -E '^[[:space:]]*instagram_caption[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/^[^"]*"//; s/"[^"]*$//')
+YOUTUBE_DESCRIPTION=$(grep -E '^[[:space:]]*youtube_description[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/^[^"]*"//; s/"[^"]*$//')
+USE_TITLE_AS_CAPTION=$(grep -E '^[[:space:]]*use_title_as_caption[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/.*=\s*//')
+SUBREDDIT=$(grep -E '^[[:space:]]*subreddit[[:space:]]*=' "$CONFIG_FILE" 2>/dev/null | head -n1 | sed -E 's/^[^"]*"//; s/"[^"]*$//')
 
 if [[ -z "$OFFLINE_OUTPUT_DIR" ]]; then
   OFFLINE_OUTPUT_DIR="offline_results"
@@ -88,13 +92,31 @@ if [[ "$OFFLINE_MODE" == "true" || "$OFFLINE_MODE" == "True" ]]; then
   exit 0
 fi
 
+if [[ "$USE_TITLE_AS_CAPTION" == "true" || "$USE_TITLE_AS_CAPTION" == "True" ]]; then
+  YT_CAPTION="$filename_without_ext"
+  INSTA_CAPTION="$filename_without_ext"
+else
+  if [[ -n "$YOUTUBE_DESCRIPTION" ]]; then
+    YT_CAPTION="${YOUTUBE_DESCRIPTION//\{title\}/$filename_without_ext}"
+    YT_CAPTION="${YT_CAPTION//\{subreddit\}/$SUBREDDIT}"
+  else
+    YT_CAPTION="$filename_without_ext"
+  fi
+
+  if [[ -n "$INSTAGRAM_CAPTION" ]]; then
+    INSTA_CAPTION="${INSTAGRAM_CAPTION//\{title\}/$filename_without_ext}"
+  else
+    INSTA_CAPTION="$filename_without_ext"
+  fi
+fi
+
 # Upload to YouTube
-log "Uploading $latest_file to YouTube."
-python3 ~/RedditVideoMakerBot-master/uploaders/youtubeUpload.py "$latest_file" "$filename_without_ext" 2>&1 | tee -a "$LOG_FILE"
+log "Uploading $latest_file to YouTube with description: $YT_CAPTION"
+python3 ~/RedditVideoMakerBot-master/uploaders/youtubeUpload.py "$latest_file" "$YT_CAPTION" 2>&1 | tee -a "$LOG_FILE"
 
 # Upload to Instagram
-log "Uploading $latest_file to Instagram."
-python3 ~/RedditVideoMakerBot-master/uploaders/instaUpload.py "$latest_file" "$filename_without_ext" 2>&1 | tee -a "$LOG_FILE"
+log "Uploading $latest_file to Instagram with caption: $INSTA_CAPTION"
+python3 ~/RedditVideoMakerBot-master/uploaders/instaUpload.py "$latest_file" "$INSTA_CAPTION" 2>&1 | tee -a "$LOG_FILE"
 
 # Deactivate the first virtual environment
 log "Deactivating RedditVideoMakerBot virtual environment."

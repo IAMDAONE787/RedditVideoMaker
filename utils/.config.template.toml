@@ -37,6 +37,7 @@ show_Reddit_Title = { optional = true, option = [true, false], default = "true",
 show_real_stats = { optional = true, type = "bool", default = false, options = [true, false], explanation = "If true, display the real upvote and comment counts on the Reddit card instead of the placeholder 999+." }
 offline_mode = { optional = true, type = "bool", default = false, example = true, explanation = "If true, do not upload to TikTok/Instagram/YouTube; just save videos locally." }
 offline_output_dir = { optional = true, default = "offline_results", example = "offline_results", explanation = "Relative folder under the project root where finished videos are copied when offline_mode is true." }
+instagram_caption = { optional = true, default = "{title} #redditstories #storytime #reddit #shorts", type = "str", explanation = "Caption template for Instagram Reels. Use {title} as a placeholder for the post title." }
 
 [manual]
 enabled = { optional = true, type = "bool", default = false, example = false, explanation = "If true, bypasses the Reddit API and uses the manual title/body text below instead." }
@@ -66,5 +67,6 @@ tiktok_sessionid = { optional = true, example = "c76bcc3a7625abcc27b508c7db457ff
 python_voice = { optional = false, default = "1", example = "1", explanation = "The index of the system tts voices (can be downloaded externally, run ptt.py to find value, start from zero)" }
 py_voice_num = { optional = false, default = "2", example = "2", explanation = "The number of system voices (2 are pre-installed in Windows)" }
 silence_duration = { optional = true, example = "0.1", explanation = "Time in seconds between TTS comments", default = 0.3, type = "float" }
+tts_speed = { optional = true, default = 1.0, example = 1.3, explanation = "Speed multiplier for TTS audio. 1.0 is normal, 1.3 is 30% faster, etc.", type = "float", nmin = 0.5, nmax = 2.0, oob_error = "TTS speed must be between 0.5 and 2.0" }
 no_emojis = { optional = false, type = "bool", default = false, example = false, options = [true, false,], explanation = "Whether to remove emojis from the comments" }
 use_gtts = { optional = true, type = "bool", default = false, example = true, explanation = "If true, force GoogleTranslate (gTTS) for TTS regardless of voice_choice, and do not require TikTok or ElevenLabs credentials." }

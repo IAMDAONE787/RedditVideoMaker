@@ -43,8 +43,8 @@ def get_subreddit_threads_headless(POST_ID: str = None) -> dict:
         comments_listing = data[1] if len(data) > 1 else None
         return _build_content(post_data, comments_listing)
 
-    # --- subreddit listing -----------------------------------------------------
-    url = f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1&limit=25"
+    # --- subreddit listing (top posts of all time) ----------------------------
+    url = f"https://www.reddit.com/r/{subreddit}/top.json?raw_json=1&t=all&limit=100"
     print_substep(f"Fetching {url}")
     resp = requests.get(url, headers=headers, timeout=30)
     resp.raise_for_status()
@@ -85,7 +85,7 @@ def get_subreddit_threads_headless(POST_ID: str = None) -> dict:
             "No suitable Reddit posts found. Try a different subreddit or loosen filters."
         )
 
-    post_data = random.choice(candidates) if settings.config["reddit"]["thread"].get("random") else candidates[0]
+    post_data = random.choice(candidates)
 
     # For non-storymode we need comments from the individual post endpoint.
     comments_listing = None
